@@ -15,6 +15,9 @@
 #include <QVector>
 #include <thread>
 
+constexpr int OFFSET_X = 300;
+constexpr int OFFSET_Y = 300;
+
 class MainWindow : public QWidget
 {
     Q_OBJECT
@@ -39,11 +42,13 @@ public:
 
 private:
     QLineEdit *m_lineedit_margin;
+    QLineEdit *m_lineedit_row;
     QLineEdit *m_lineedit_columns;
     QLineEdit *m_lineedit_filename;
     QComboBox *m_combobox_format;
-    QCheckBox *m_checkbox_serialnumber;
+    QCheckBox *m_checkbox_sequence;
     QCheckBox *m_checkbox_datetime;
+    QCheckBox *m_checkbox_mosaic;
     QPushButton *m_pushbutton_select;
     QPushButton *m_pushbutton_start;
     QLabel *m_label_state;
@@ -58,6 +63,9 @@ private:
     cv::Mat CreateImageGrid(const QVector<cv::Mat> &images);
     void SelectImages();
     void Start();
+    void DrawSequence(cv::Mat &img, const int index);
+    void DrawDateTime(cv::Mat &img, const int index);
+    void DrawMosaic(cv::Mat &img, const cv::Rect &rect_target);
     void ImageProcessing();
 };
 

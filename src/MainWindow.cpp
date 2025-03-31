@@ -20,6 +20,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_lineedit_margin->setToolTip("图像之间的边距，单位: 像素");
     fLayout->addRow("边距:", m_lineedit_margin);
 
+    m_lineedit_row = new QLineEdit(this);
+    fLayout->addRow("行数:", m_lineedit_row);
+
     m_lineedit_columns = new QLineEdit(this);
     fLayout->addRow("列数:", m_lineedit_columns);
 
@@ -36,15 +39,20 @@ MainWindow::MainWindow(QWidget *parent)
     m_combobox_format->setToolTip("输出文件的后缀");
     fLayout->addRow("文件格式:", m_combobox_format);
 
-    m_checkbox_serialnumber = new QCheckBox(this);
-    m_checkbox_serialnumber->setText("添加序列号");
-    m_checkbox_serialnumber->setChecked(true);
-    fLayout->addWidget(m_checkbox_serialnumber);
+    m_checkbox_sequence = new QCheckBox(this);
+    m_checkbox_sequence->setText("添加序列号");
+    m_checkbox_sequence->setChecked(true);
+    fLayout->addWidget(m_checkbox_sequence);
 
     m_checkbox_datetime = new QCheckBox(this);
     m_checkbox_datetime->setText("添加日期时间");
     m_checkbox_datetime->setChecked(true);
     fLayout->addWidget(m_checkbox_datetime);
+
+    m_checkbox_mosaic = new QCheckBox(this);
+    m_checkbox_mosaic->setText("手机号打码");
+    m_checkbox_mosaic->setChecked(true);
+    fLayout->addWidget(m_checkbox_mosaic);
 
     QHBoxLayout *hLayout_pushbutton = new QHBoxLayout();
     hLayout_pushbutton->setContentsMargins(0, 0, 0, 0);
@@ -143,7 +151,8 @@ bool MainWindow::FindLineEdit(cv::Mat &img, cv::Rect &rect_target)
 cv::Mat MainWindow::CreateImageGrid(const QVector<cv::Mat> &images)
 {
     int rows = m_lineedit_columns->text().toInt();
-    int cols = static_cast<int>(std::ceil(static_cast<double>(m_image_paths.size()) / rows));
+    int cols = m_lineedit_row->text().toInt();
+    // int cols = static_cast<int>(std::ceil(static_cast<double>(m_image_paths.size()) / rows));
     if (images.empty() || rows * cols < images.size())
     {
         QMessageBox::warning(this, "错误", "行数/列数错误", QMessageBox::Ok);
@@ -192,6 +201,7 @@ void MainWindow::SelectImages()
         m_fileinfo.setFile(m_image_paths.first());
         m_lineedit_filename->setText(m_fileinfo.absoluteDir().dirName());
         m_lineedit_columns->setText(QString::number(static_cast<int>(std::ceil(std::sqrt(m_image_paths.size())))));
+        m_lineedit_row->setText(QString::number(static_cast<int>(std::ceil(static_cast<double>(m_image_paths.size()) / m_lineedit_columns->text().toInt()))));
         m_label_state->setText("已选" + QString::number(m_image_paths.size()) + "张图片");
         m_pushbutton_start->setDisabled(false);
     }
@@ -200,43 +210,86 @@ void MainWindow::SelectImages()
 void MainWindow::Start()
 {
     m_lineedit_margin->setDisabled(true);
+    m_lineedit_row->setDisabled(true);
     m_lineedit_columns->setDisabled(true);
     m_lineedit_filename->setDisabled(true);
     m_combobox_format->setDisabled(true);
-    m_checkbox_serialnumber->setDisabled(true);
+    m_checkbox_sequence->setDisabled(true);
     m_checkbox_datetime->setDisabled(true);
+    m_checkbox_mosaic->setDisabled(true);
     m_pushbutton_select->setDisabled(true);
     m_pushbutton_start->setDisabled(true);
 
     m_worker = std::thread(&MainWindow::ImageProcessing, this);
 }
 
+void MainWindow::DrawSequence(cv::Mat &img, const int index)
+{
+    // 设置字体类型、大小、颜色和位置
+    int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+    double fontScale = 3;                  // 字体缩放因子
+    int thickness = 4;                     // 线宽
+    cv::Scalar color(0, 0, 255);           // BGR颜色
+    cv::Point textOrg(OFFSET_X, OFFSET_Y); // 文本起始位置
+    // 绘制序号
+    cv::putText(img, std::to_string(index), textOrg, fontFace, fontScale, color, thickness, cv::LINE_AA);
+}
+
+void MainWindow::DrawDateTime(cv::Mat &img, const int index)
+{
+}
+
+void MainWindow::DrawMosaic(cv::Mat &img, const cv::Rect &rect_target)
+{
+    cv::rectangle(img, rect_target.tl(), rect_target.br(), cv::Scalar(255, 0, 255), 5);
+}
+
 void MainWindow::ImageProcessing()
 {
     // 加载图片
     Q_EMIT sig_update_status("正在读取...");
-    Q_EMIT sig_set_progress_range(0, 1 + m_image_paths.size() + 1);
+    Q_EMIT sig_set_progress_range(0, 1 + m_image_paths.size() + 1); // 加载 + 绘制&拼接 + 保存
     int step = 0;
     QVector<cv::Mat> images = LoadImagesFromQStringList(m_image_paths);
     Q_EMIT sig_update_progress(++step);
 
-    // 查找lineedit
-    Q_EMIT sig_update_status("正在绘制...");
-    for (cv::Mat &img : images)
+    // 处理图片
+    Q_EMIT sig_update_status("正在绘制&拼接...");
+    if (m_checkbox_sequence->isChecked() || m_checkbox_datetime->isChecked() || m_checkbox_mosaic->isChecked())
     {
-        cv::Rect rect_target;
-        if (!FindLineEdit(img, rect_target))
+        // 查找lineedit
+        for (int i = 0; i < images.size(); ++i)
         {
-            spdlog::error("Failed to find lineedit");
+            cv::Mat &img = images[i];
+            /*绘制序号*/
+            if (m_checkbox_sequence->isChecked())
+            {
+                DrawSequence(img, i);
+            }
+            /*绘制时间*/
+            if (m_checkbox_datetime->isChecked())
+            {
+                DrawDateTime(img, i);
+            }
+            /*绘制马赛克*/
+            if (m_checkbox_mosaic->isChecked())
+            {
+                cv::Rect rect_target;
+                if (!FindLineEdit(img, rect_target))
+                {
+                    spdlog::error("Failed to find lineedit");
+                }
+                else
+                {
+                    // cv::rectangle(img, rect_target.tl(), rect_target.br(), cv::Scalar(255, 0, 255), 5);
+                    DrawMosaic(img, rect_target);
+                }
+            }
+            Q_EMIT sig_update_progress(++step);
         }
-        else
-        {
-            cv::rectangle(img, rect_target.tl(), rect_target.br(), cv::Scalar(255, 0, 255), 5);
-        }
-        Q_EMIT sig_update_progress(++step);
     }
 
-    // 保存矩阵为图像文件
+    // 保存拼接后的图片
     cv::Mat img_result = CreateImageGrid(images);
     Q_EMIT sig_update_status("正在保存...");
     std::string output_file = QString(m_fileinfo.absoluteDir().path() + "/" + m_lineedit_filename->text() + "." + m_combobox_format->currentText()).toStdString();
@@ -244,7 +297,6 @@ void MainWindow::ImageProcessing()
     {
         Q_EMIT sig_update_progress(++step);
         spdlog::error("Failed to save image");
-        // QMessageBox::warning(this, "错误", "保存失败", QMessageBox::Ok);
         Q_EMIT sig_show_message(false, "保存失败");
         Q_EMIT sig_update_status("保存失败");
     }
@@ -252,7 +304,6 @@ void MainWindow::ImageProcessing()
     {
         Q_EMIT sig_update_progress(++step);
         spdlog::info("Success");
-        // QMessageBox::information(this, "成功", "文件已保存至: " + QString::fromStdString(output_file), QMessageBox::Ok);
         Q_EMIT sig_show_message(true, "文件已保存至: " + QString::fromStdString(output_file));
         Q_EMIT sig_update_status("保存完成");
     }
@@ -267,11 +318,13 @@ void MainWindow::slot_finish()
     }
 
     m_lineedit_margin->setDisabled(false);
+    m_lineedit_row->setDisabled(false);
     m_lineedit_columns->setDisabled(false);
     m_lineedit_filename->setDisabled(false);
     m_combobox_format->setDisabled(false);
-    m_checkbox_serialnumber->setDisabled(false);
+    m_checkbox_sequence->setDisabled(false);
     m_checkbox_datetime->setDisabled(false);
+    m_checkbox_mosaic->setDisabled(false);
     m_pushbutton_select->setDisabled(false);
     m_pushbutton_start->setDisabled(false);
 }
