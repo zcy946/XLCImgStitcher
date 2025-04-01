@@ -159,6 +159,8 @@ cv::Mat MainWindow::CreateImageGrid(const QVector<cv::Mat> &images)
         QMessageBox::warning(this, "错误", "行数/列数错误", QMessageBox::Ok);
     }
 
+    int margin = m_lineedit_margin->text().toInt();
+
     // 获取最大图片的宽度和高度
     int max_width = 0, max_height = 0;
     for (const auto &img : images)
@@ -168,7 +170,7 @@ cv::Mat MainWindow::CreateImageGrid(const QVector<cv::Mat> &images)
     }
 
     // 创建空白画布
-    cv::Mat grid(rows * max_height, cols * max_width, CV_8UC3, cv::Scalar(255, 255, 255));
+    cv::Mat grid(rows * max_height + (rows - 1) * margin, cols * max_width + (cols - 1) * margin, CV_8UC3, cv::Scalar(255, 255, 255));
 
     // 将图片粘贴到画布上
     for (size_t i = 0; i < images.size(); ++i)
@@ -176,8 +178,8 @@ cv::Mat MainWindow::CreateImageGrid(const QVector<cv::Mat> &images)
         int row = i / cols;
         int col = i % cols;
 
-        int x = col * max_width;
-        int y = row * max_height;
+        int x = col == 0 ? col * max_width : col * max_width + col * margin;
+        int y = row == 0 ? row * max_height : row * max_height + row * margin;
 
         int w = images[i].cols;
         int h = images[i].rows;
@@ -205,7 +207,9 @@ void MainWindow::SelectImages()
         m_lineedit_row->setText(QString::number(static_cast<int>(std::ceil(static_cast<double>(m_image_paths.size()) / m_lineedit_columns->text().toInt()))));
         m_label_state->setText("已选" + QString::number(m_image_paths.size()) + "张图片");
         m_pushbutton_start->setDisabled(false);
+        return;
     }
+    m_pushbutton_start->setDisabled(true);
 }
 
 void MainWindow::Start()
@@ -229,7 +233,7 @@ void MainWindow::DrawSequence(cv::Mat &img, const int index)
     // 设置字体类型、大小、颜色和位置
     int fontFace = cv::FONT_HERSHEY_SIMPLEX;
     double fontScale = 3; // 字体缩放因子
-    int thickness = 4;    // 线宽
+    int thickness = 6;    // 线宽
     // 绘制阴影
     cv::Scalar color_shadow(255, 255, 255);                                                             // BGR颜色
     cv::Point textOrg_shadow(OFFSET_X_SEQUENCE + OFFSET_X_SHADOW, OFFSET_Y_SEQUENCE + OFFSET_Y_SHADOW); // 文本起始位置
@@ -246,7 +250,7 @@ void MainWindow::DrawDateTime(cv::Mat &img, const int index)
     std::string dateTime = currentFile.lastModified().toString("yyyy-MM-dd hh:mm:ss").toStdString();
     int fontFace = cv::FONT_HERSHEY_SIMPLEX;
     double fontScale = 3;
-    int thickness = 4;
+    int thickness = 6;
     cv::Scalar color_shadow(255, 255, 255);
     cv::Point textOrg_shadow(OFFSET_X_DATETIME + OFFSET_X_SHADOW, OFFSET_Y_DATETIME + OFFSET_Y_SHADOW);
     cv::putText(img, dateTime, textOrg_shadow, fontFace, fontScale, color_shadow, thickness, cv::LINE_AA);
