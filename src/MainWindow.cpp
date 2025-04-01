@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSpacerItem>
+#include <QDateTime>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -227,21 +228,46 @@ void MainWindow::DrawSequence(cv::Mat &img, const int index)
 {
     // 设置字体类型、大小、颜色和位置
     int fontFace = cv::FONT_HERSHEY_SIMPLEX;
-    double fontScale = 3;                  // 字体缩放因子
-    int thickness = 4;                     // 线宽
-    cv::Scalar color(0, 0, 255);           // BGR颜色
-    cv::Point textOrg(OFFSET_X, OFFSET_Y); // 文本起始位置
+    double fontScale = 3; // 字体缩放因子
+    int thickness = 4;    // 线宽
+    // 绘制阴影
+    cv::Scalar color_shadow(255, 255, 255);                                                             // BGR颜色
+    cv::Point textOrg_shadow(OFFSET_X_SEQUENCE + OFFSET_X_SHADOW, OFFSET_Y_SEQUENCE + OFFSET_Y_SHADOW); // 文本起始位置
+    cv::putText(img, std::to_string(index + 1), textOrg_shadow, fontFace, fontScale, color_shadow, thickness, cv::LINE_AA);
     // 绘制序号
-    cv::putText(img, std::to_string(index), textOrg, fontFace, fontScale, color, thickness, cv::LINE_AA);
+    cv::Scalar color(0, 0, 255);
+    cv::Point textOrg(OFFSET_X_SEQUENCE, OFFSET_Y_SEQUENCE);
+    cv::putText(img, std::to_string(index + 1), textOrg, fontFace, fontScale, color, thickness, cv::LINE_AA);
 }
 
 void MainWindow::DrawDateTime(cv::Mat &img, const int index)
 {
+    QFileInfo currentFile(m_image_paths[index]);
+    std::string dateTime = currentFile.lastModified().toString("yyyy-MM-dd hh:mm:ss").toStdString();
+    int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+    double fontScale = 3;
+    int thickness = 4;
+    cv::Scalar color_shadow(255, 255, 255);
+    cv::Point textOrg_shadow(OFFSET_X_DATETIME + OFFSET_X_SHADOW, OFFSET_Y_DATETIME + OFFSET_Y_SHADOW);
+    cv::putText(img, dateTime, textOrg_shadow, fontFace, fontScale, color_shadow, thickness, cv::LINE_AA);
+    cv::Scalar color(243, 150, 33);
+    cv::Point textOrg(OFFSET_X_DATETIME, OFFSET_Y_DATETIME);
+    cv::putText(img, dateTime, textOrg, fontFace, fontScale, color, thickness, cv::LINE_AA);
 }
 
 void MainWindow::DrawMosaic(cv::Mat &img, const cv::Rect &rect_target)
 {
-    cv::rectangle(img, rect_target.tl(), rect_target.br(), cv::Scalar(255, 0, 255), 5);
+    // cv::rectangle(img, rect_target.tl(), rect_target.br(), cv::Scalar(255, 0, 255), 5);
+    // 截取打码区域
+    int x = rect_target.x + OFFSET_X_MOSAIC;
+    int y = rect_target.y + OFFSET_Y_MOSAIC;
+    int w = WIDTH_MOSAIC;
+    int h = HEIGHT_MOSAIC;
+    cv::Mat img_mosaic = img(cv::Rect(x, y, w, h)).clone();
+    // 打码
+    cv::GaussianBlur(img_mosaic, img_mosaic, cv::Size(25, 25), 0);
+    // 粘贴到原图
+    img_mosaic.copyTo(img(cv::Rect(x, y, w, h)));
 }
 
 void MainWindow::ImageProcessing()

@@ -3,7 +3,7 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(ImgStitcher)
+project(ImgStitcher VERSION 1.0)
 
 find_package(OpenCV REQUIRED)
 find_package(spdlog REQUIRED)

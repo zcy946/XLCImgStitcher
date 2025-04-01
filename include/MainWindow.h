@@ -15,8 +15,16 @@
 #include <QVector>
 #include <thread>
 
-constexpr int OFFSET_X = 300;
-constexpr int OFFSET_Y = 300;
+constexpr int OFFSET_X_SEQUENCE = 300;
+constexpr int OFFSET_Y_SEQUENCE = 400;
+constexpr int OFFSET_X_DATETIME = 450;
+constexpr int OFFSET_Y_DATETIME = 400;
+constexpr int OFFSET_X_SHADOW = 4;
+constexpr int OFFSET_Y_SHADOW = 0;
+constexpr int OFFSET_X_MOSAIC = 48;
+constexpr int OFFSET_Y_MOSAIC = 10;
+constexpr int WIDTH_MOSAIC = 62;
+constexpr int HEIGHT_MOSAIC = 40;
 
 class MainWindow : public QWidget
 {
