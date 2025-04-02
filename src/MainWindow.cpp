@@ -231,7 +231,7 @@ void MainWindow::Start()
 void MainWindow::DrawSequence(cv::Mat &img, const int index)
 {
     // 设置字体类型、大小、颜色和位置
-    int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+    int fontFace = cv::FONT_HERSHEY_DUPLEX;
     double fontScale = 3; // 字体缩放因子
     int thickness = 6;    // 线宽
     // 绘制阴影
@@ -248,7 +248,7 @@ void MainWindow::DrawDateTime(cv::Mat &img, const int index)
 {
     QFileInfo currentFile(m_image_paths[index]);
     std::string dateTime = currentFile.lastModified().toString("yyyy-MM-dd hh:mm:ss").toStdString();
-    int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+    int fontFace = cv::FONT_HERSHEY_DUPLEX;
     double fontScale = 3;
     int thickness = 6;
     cv::Scalar color_shadow(255, 255, 255);
