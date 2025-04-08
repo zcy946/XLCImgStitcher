@@ -57,6 +57,7 @@ private:
     QCheckBox *m_checkbox_sequence;
     QCheckBox *m_checkbox_datetime;
     QCheckBox *m_checkbox_mosaic;
+    QCheckBox *m_checkbox_compress;
     QPushButton *m_pushbutton_select;
     QPushButton *m_pushbutton_start;
     QLabel *m_label_state;
@@ -64,6 +65,7 @@ private:
     QStringList m_image_paths;
     QFileInfo m_fileinfo;
     std::thread m_worker;
+    int m_step;
 
 private:
     QVector<cv::Mat> LoadImagesFromQStringList(const QStringList &qstringlist);
@@ -75,6 +77,7 @@ private:
     void DrawDateTime(cv::Mat &img, const int index);
     void DrawMosaic(cv::Mat &img, const cv::Rect &rect_target);
     void ImageProcessing();
+    void CompressAsPNG(const cv::Mat& image, const std::string& outputPath, int compressionLevel = 3);
 };
 
 #endif

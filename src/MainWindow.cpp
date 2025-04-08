@@ -9,7 +9,7 @@
 #include <QDateTime>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent)
+    : QWidget(parent), m_step(0)
 {
     QFormLayout *fLayout = new QFormLayout();
     fLayout->setContentsMargins(30, 30, 30, 30);
@@ -38,6 +38,11 @@ MainWindow::MainWindow(QWidget *parent)
     m_combobox_format->addItem("jpg");
     m_combobox_format->setCurrentIndex(0);
     m_combobox_format->setToolTip("输出文件的后缀");
+    connect(m_combobox_format, &QComboBox::currentTextChanged, this,
+            [this](const QString &current_text)
+            {
+                m_checkbox_compress->setDisabled(current_text == QString("png") ? false : true);
+            });
     fLayout->addRow("文件格式:", m_combobox_format);
 
     m_checkbox_sequence = new QCheckBox(this);
@@ -54,6 +59,11 @@ MainWindow::MainWindow(QWidget *parent)
     m_checkbox_mosaic->setText("手机号打码");
     m_checkbox_mosaic->setChecked(true);
     fLayout->addWidget(m_checkbox_mosaic);
+
+    m_checkbox_compress = new QCheckBox(this);
+    m_checkbox_compress->setText("图像压缩");
+    m_checkbox_compress->setChecked(true);
+    fLayout->addWidget(m_checkbox_compress);
 
     QHBoxLayout *hLayout_pushbutton = new QHBoxLayout();
     hLayout_pushbutton->setContentsMargins(0, 0, 0, 0);
@@ -222,6 +232,7 @@ void MainWindow::Start()
     m_checkbox_sequence->setDisabled(true);
     m_checkbox_datetime->setDisabled(true);
     m_checkbox_mosaic->setDisabled(true);
+    m_checkbox_compress->setDisabled(true);
     m_pushbutton_select->setDisabled(true);
     m_pushbutton_start->setDisabled(true);
 
@@ -279,9 +290,9 @@ void MainWindow::ImageProcessing()
     // 加载图片
     Q_EMIT sig_update_status("正在读取...");
     Q_EMIT sig_set_progress_range(0, 1 + m_image_paths.size() + 1); // 加载 + 绘制&拼接 + 保存
-    int step = 0;
+    m_step = 0;
     QVector<cv::Mat> images = LoadImagesFromQStringList(m_image_paths);
-    Q_EMIT sig_update_progress(++step);
+    Q_EMIT sig_update_progress(++m_step);
 
     // 处理图片
     Q_EMIT sig_update_status("正在绘制&拼接...");
@@ -315,7 +326,7 @@ void MainWindow::ImageProcessing()
                     DrawMosaic(img, rect_target);
                 }
             }
-            Q_EMIT sig_update_progress(++step);
+            Q_EMIT sig_update_progress(++m_step);
         }
     }
 
@@ -323,18 +334,46 @@ void MainWindow::ImageProcessing()
     cv::Mat img_result = CreateImageGrid(images);
     Q_EMIT sig_update_status("正在保存...");
     std::string output_file = QString(m_fileinfo.absoluteDir().path() + "/" + m_lineedit_filename->text() + "." + m_combobox_format->currentText()).toStdString();
+    if (m_checkbox_compress->isChecked() && m_combobox_format->currentText() == QString("png"))
+    {
+        CompressAsPNG(img_result, output_file);
+        return;
+    }
     if (!cv::imwrite(output_file, img_result))
     {
-        Q_EMIT sig_update_progress(++step);
+        Q_EMIT sig_update_progress(++m_step);
         spdlog::error("Failed to save image");
         Q_EMIT sig_show_message(false, "保存失败");
         Q_EMIT sig_update_status("保存失败");
     }
     else
     {
-        Q_EMIT sig_update_progress(++step);
+        Q_EMIT sig_update_progress(++m_step);
         spdlog::info("Success");
         Q_EMIT sig_show_message(true, "文件已保存至: " + QString::fromStdString(output_file));
+        Q_EMIT sig_update_status("保存完成");
+    }
+    Q_EMIT sig_finish();
+}
+
+void MainWindow::CompressAsPNG(const cv::Mat &image, const std::string &outputPath, int compressionLevel)
+{
+    std::vector<int> compression_params;
+    compression_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(compressionLevel); // 0-9 (0-无压缩但快, 9-最大压缩但慢)
+
+    if (!cv::imwrite(outputPath, image, compression_params))
+    {
+        Q_EMIT sig_update_progress(++m_step);
+        spdlog::error("Failed to save image");
+        Q_EMIT sig_show_message(false, "保存失败");
+        Q_EMIT sig_update_status("保存失败");
+    }
+    else
+    {
+        Q_EMIT sig_update_progress(++m_step);
+        spdlog::info("Success");
+        Q_EMIT sig_show_message(true, "文件已保存至: " + QString::fromStdString(outputPath));
         Q_EMIT sig_update_status("保存完成");
     }
     Q_EMIT sig_finish();
@@ -355,6 +394,7 @@ void MainWindow::slot_finish()
     m_checkbox_sequence->setDisabled(false);
     m_checkbox_datetime->setDisabled(false);
     m_checkbox_mosaic->setDisabled(false);
+    m_checkbox_compress->setDisabled(m_combobox_format->currentText() == QString("png") ? false : true);
     m_pushbutton_select->setDisabled(false);
     m_pushbutton_start->setDisabled(false);
 }
