@@ -35,7 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_combobox_format = new QComboBox(this);
     m_combobox_format->addItem("png");
-    m_combobox_format->addItem("jpg");
+    // BUG JPG格式cv::imwrite会报错
+    // m_combobox_format->addItem("jpg");
     m_combobox_format->setCurrentIndex(0);
     m_combobox_format->setToolTip("输出文件的后缀");
     connect(m_combobox_format, &QComboBox::currentTextChanged, this,
