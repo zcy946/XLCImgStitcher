@@ -41,6 +41,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE FALSE)
-else(CMAKE_BUILD_TYPE STREQUAL "Release")
+else()
         set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()

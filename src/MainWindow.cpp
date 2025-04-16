@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QSpacerItem>
 #include <QDateTime>
+#include <QStandardPaths>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent), m_step(0)
@@ -53,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_checkbox_datetime = new QCheckBox(this);
     m_checkbox_datetime->setText("添加日期时间");
-    m_checkbox_datetime->setChecked(true);
+    // m_checkbox_datetime->setChecked(true);
     fLayout->addWidget(m_checkbox_datetime);
 
     m_checkbox_mosaic = new QCheckBox(this);
@@ -204,7 +205,7 @@ cv::Mat MainWindow::CreateImageGrid(const QVector<cv::Mat> &images)
 void MainWindow::SelectImages()
 {
     m_image_paths.clear();
-    m_image_paths = QFileDialog::getOpenFileNames(nullptr, "选择一张或多张图片", QDir::homePath(), "图像文件 (*.png *.jpg);;所有文件 (*)");
+    m_image_paths = QFileDialog::getOpenFileNames(nullptr, "选择一张或多张图片", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "图像文件 (*.png *.jpg);;所有文件 (*)");
     if (!m_image_paths.isEmpty())
     {
         spdlog::debug("Number of files selected: {}", m_image_paths.size());
