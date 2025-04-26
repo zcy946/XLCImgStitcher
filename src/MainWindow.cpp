@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_checkbox_sequence = new QCheckBox(this);
     m_checkbox_sequence->setText("添加序列号");
-    m_checkbox_sequence->setChecked(true);
+    // m_checkbox_sequence->setChecked(true);
     fLayout->addWidget(m_checkbox_sequence);
 
     m_checkbox_datetime = new QCheckBox(this);
