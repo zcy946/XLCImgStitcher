@@ -16,9 +16,9 @@
 #include <thread>
 
 constexpr int OFFSET_X_SEQUENCE = 300;
-constexpr int OFFSET_Y_SEQUENCE = 400;
+constexpr int OFFSET_Y_SEQUENCE = 230;
 constexpr int OFFSET_X_DATETIME = 450;
-constexpr int OFFSET_Y_DATETIME = 400;
+constexpr int OFFSET_Y_DATETIME = 230;
 constexpr int OFFSET_X_SHADOW = 4;
 constexpr int OFFSET_Y_SHADOW = 4;
 constexpr int OFFSET_X_MOSAIC = 48;

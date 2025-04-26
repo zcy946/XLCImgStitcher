@@ -8,6 +8,7 @@ project(ImgStitcher VERSION 1.0)
 find_package(OpenCV REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(cxxopts CONFIG REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -33,9 +34,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         Qt5::Core
         Qt5::Gui
         Qt5::Widgets
+        cxxopts::cxxopts
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES 
+set_target_properties(${PROJECT_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin"
 )
 
