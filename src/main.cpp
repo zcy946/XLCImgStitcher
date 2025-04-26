@@ -10,7 +10,6 @@
 
 namespace fs = std::filesystem;
 
-
 // 查找文本框的函数
 bool FindLineEdit(cv::Mat &img, cv::Rect &rect_target)
 {
@@ -295,7 +294,30 @@ int main(int argc, char **argv)
 		cxxopts::Options options(argv[0], "Image stitching and processing tool");
 		options.add_options()("i,input", "Input files or directories", cxxopts::value<std::vector<std::string>>())("r,rows", "Number of rows (0 for auto)", cxxopts::value<int>()->default_value("0"))("c,cols", "Number of columns (0 for auto)", cxxopts::value<int>()->default_value("0"))("m,margin", "Margin between images", cxxopts::value<int>()->default_value("10"))("o,output", "Output file path", cxxopts::value<std::string>()->default_value("stitched_image.png"))("s,sequence", "Add sequence numbers")("d,datetime", "Add datetime stamps")("M,mosaic", "Add mosaic effect")("h,help", "Print help");
 
+		// 设置参数解析器允许无选项参数
+		options.allow_unrecognised_options();
+		options.positional_help("[input  files...]");
+
+		// 解析参数
 		auto result = options.parse(argc, argv);
+
+		// 收集输入文件
+		std::vector<std::string> inputs;
+		if (result.count("input"))
+		{
+			inputs = result["input"].as<std::vector<std::string>>();
+		}
+
+		// 收集未标记的参数作为额外的输入文件
+		auto &unmatched = result.unmatched();
+		inputs.insert(inputs.end(), unmatched.begin(), unmatched.end());
+
+		if (inputs.empty())
+		{
+			spdlog::error("No input files specified");
+			spdlog::info(options.help());
+			return 1;
+		}
 
 		// 2. 处理帮助选项
 		if (result.count("help"))
@@ -313,7 +335,6 @@ int main(int argc, char **argv)
 		}
 
 		// 4. 收集所有图片路径
-		auto inputs = result["input"].as<std::vector<std::string>>();
 		auto imagePaths = CollectImagePaths(inputs);
 
 		if (imagePaths.empty())
